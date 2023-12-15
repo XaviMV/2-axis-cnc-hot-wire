@@ -198,8 +198,8 @@ def moure_steppers(steppers_clicats, stepper1_invertit, stepper2_invertit, board
 	temps_per_step = 0.01
 	iteracions = 1
 	if clicat == 2 or clicat == 6: # s'han de fer 20 steps (fletxa gran)
-		iteracions = 20
-		temps_per_step = 0.002
+		iteracions = 30
+		temps_per_step = 0.004
 	
 	pin_stepper = 0
 	if clicat < 4: # stepper 1
@@ -274,6 +274,13 @@ def dibuixar_gui(screen, pwm1, pwm2, min_pwm1, max_pwm1, min_pwm2, max_pwm2, ste
 		label = myfont.render("STEPPER"+str(i+1), 10, (255,255,0))
 		screen.blit(label, (165+i*680,545))
 
+		# botons de invertir
+		pygame.draw.rect(screen, (125,125,125), (380+i*680,545,50,50))
+		pygame.draw.rect(screen, (0,0,0), (385+i*680,550,40,40))
+
+		myfont = pygame.font.SysFont("monospace", 40)
+		label = myfont.render("I", 10, (255,255,255))
+		screen.blit(label, (393+i*680,548))
 
 
 	# dibuixar el valor de les pwm limit
@@ -330,9 +337,11 @@ def detect_clicks(events):
 
 	servos_clicats = [0,0,0,0] # els elements representen: pwm1+, pwm1-, pwm2+, pwm2-
 
-	steppers_clicats = [0,0,0,0, 0,0,0,0] # 4 botons per cada stepper: sumar 1 step, restar 1 step, sumar 10 steps i restar 10 steps
+	steppers_clicats = [0,0,0,0, 0,0,0,0] # 4 botons per cada stepper: sumar 1 step, restar 1 step, sumar 30 steps i restar 30 steps
 
-	botons_clicats = [0, 0, 0, 0, 0, 0] # els botons son: set_max, set_min, remove_max, remove_min dels botons pwm
+	botons_clicats = [0, 0, 0, 0, 0, 0] # els botons son: set_max, set_min, remove_max, remove_min, invertir1, invertir2 dels servos
+
+	steppers_invertits = [0, 0]
 
 	x, y = pygame.mouse.get_pos()
 
@@ -365,11 +374,17 @@ def detect_clicks(events):
 				if x > 675 and x < 675+55 and y > 125+i*50 and y < 125+i*50+45:
 					botons_clicats[i+2] = 1
 
-			for i in range(2): # botons invertir
+			for i in range(2): # botons invertir servo
 				if x > 225+i*680 and x < 225+i*680+50 and y > 275 and y < 275+50:
 					botons_clicats[i+4] = 1
 
-	return servos_clicats, steppers_clicats, botons_clicats
+			380+i*680,545,50,50
+
+			for i in range(2): # botons invertir stepper
+				if x > 380+i*680 and x < 380+i*680+50 and y > 545 and y < 545+50:
+					steppers_invertits[i] = 1
+
+	return servos_clicats, steppers_clicats, botons_clicats, steppers_invertits
 
 
 # per determinar la direccio i posicio dels steppers i fixar els punts maxim i minim dels servos
@@ -404,7 +419,7 @@ def calibrar(board):
 			if e.type == pygame.QUIT:
 				calibrant = False
 
-		servos_clicats, steppers_clicats, botons_clicats = detect_clicks(events)
+		servos_clicats, steppers_clicats, botons_clicats, steppers_invertits = detect_clicks(events)
 
 		# tractar clics
 		if botons_clicats[0]: # sha clicat SET MAX
@@ -414,11 +429,24 @@ def calibrar(board):
 			min_pwm1 = pwm1
 			min_pwm2 = pwm2
 		if botons_clicats[2]: # sha clicat REMOVE MAX
-			max_pwm1 = 255
-			max_pwm2 = 255
+			if not servo1_invertit:
+				max_pwm1 = 255
+			else:
+				max_pwm1 = 0
+			if not servo2_invertit:
+				max_pwm2 = 255
+			else:
+				max_pwm2 = 0
+
 		if botons_clicats[3]: # sha clicat REMOVE MIN
-			min_pwm1 = 0
-			min_pwm2 = 0
+			if not servo1_invertit:
+				min_pwm1 = 0
+			else:
+				min_pwm1 = 255
+			if not servo2_invertit:
+				min_pwm2 = 0
+			else:
+				min_pwm2 = 255
 
 
 		if botons_clicats[4]: # invertir servo 1
@@ -428,6 +456,12 @@ def calibrar(board):
 		if botons_clicats[5]: # invertir servo 2
 			servo2_invertit = not servo2_invertit
 			min_pwm2, max_pwm2 = max_pwm2, min_pwm2
+
+		if steppers_invertits[0]: # invertir stepper 1
+			stepper1_invertit = not stepper1_invertit
+
+		if steppers_invertits[1]: # invertir stepper 2
+			stepper2_invertit = not stepper2_invertit
 
 		# limitar els valors maxims i minims
 		if not servo1_invertit:
@@ -462,8 +496,8 @@ def calibrar(board):
 		clock.tick(20)
 
 		# moure els components
-		moure_servos(pwm1, pwm2, board)
-		moure_steppers(steppers_clicats, stepper1_invertit, stepper2_invertit, board)
+		#moure_servos(pwm1, pwm2, board)
+		#moure_steppers(steppers_clicats, stepper1_invertit, stepper2_invertit, board)
 
 	pygame.quit()
 
@@ -489,7 +523,7 @@ def iniciar_board():
 	board.digitalWrite(PIN_STEPPER_1_DIR, "LOW")
 	board.digitalWrite(PIN_STEPPER_2_DIR, "LOW")
 
-	moure_servos(128, 128, board):
+	moure_servos(128, 128, board)
 
 	return board
 
@@ -497,7 +531,20 @@ def iniciar_board():
 def main():
 	board = iniciar_board()
 
-	calibrar(board)
+	min_pwm1, max_pwm1, min_pwm2, max_pwm2, stepper1_invertit, stepper2_invertit = calibrar(board)
+
+
+	punts = []
+	punts.append((10, 5))
+	punts.append((20, 0))
+	punts.append((0, 0))
+
+	servo_info = min_pwm1, max_pwm1, min_pwm2, max_pwm2, 0, 5
+
+	x, y = fer_trajecte(punts, 1, servo_info, board)
+	
+	if x == -1 or y == -1:
+		print("ERROR ALGUN PUNT ES MASSA VERTICAL")
 
 	board.close()
 
