@@ -36,7 +36,7 @@ def valor_proporcional(valor_ref, valor_ref_min, valor_ref_max, valor_obj_min, v
 # x_fi, y_fi -> punt objectiu a on es vol portar la cnc
 # vel -> velocitat amb la que es vol anar, en cm/s
 # servo_info -> llista amb informacio sobre el servo
-def anar_a_punt(x_ini, y_ini, x_fi, y_fi, vel, servo_info):
+def anar_a_punt(x_ini, y_ini, x_fi, y_fi, vel, servo_info, board):
 
 	# mirar que els moviments no siguin molt verticals
 	ratio = abs(y_fi-y_ini)/abs(x_fi-x_ini)
@@ -134,21 +134,15 @@ def revisar(llista_punts):
 
 # quan es crida aquesta funcio el punt on esta actualment la cnc passa a ser X = 0
 # llista_punts es una llista de tuples, el primer element d'una tupa es una coordenada x i el segon es una coordenada y
-def fer_trajecte(llista_punts, velocitat, servo_info):
+def fer_trajecte(llista_punts, velocitat, servo_info, board):
 
 	if revisar(llista_punts) == -1: # mira que ningun trajecte entre punts sigui massa vertical
 		return -1, -1
 
 	# posar els servos en el seu lloc mes baix, els steppers no es toquen, el punt on estan passa a ser el punt on X = 0
-	board = Arduino("115200")
-
-	board.pinMode(PIN_SERVO_1, "OUTPUT")
-	board.pinMode(PIN_SERVO_2, "OUTPUT")
-
 	board.analogWrite(PIN_SEVO_1, servo_info[0])
 	board.analogWrite(PIN_SEVO_2, servo_info[2])
 
-	board.close()
 
 	x, y = (0, 0)
 
@@ -161,18 +155,13 @@ def fer_trajecte(llista_punts, velocitat, servo_info):
 
 
 # funcio per moure els sevos amb les pwm donades
-def moure_servos(pwm1, pwm2):
-	board = Arduino("115200")
-
-	board.pinMode(PIN_SERVO_1, "OUTPUT")
-	board.pinMode(PIN_SERVO_2, "OUTPUT")
+def moure_servos(pwm1, pwm2, board):
 
 	board.analogWrite(PIN_SEVO_1, pwm1)
 	board.analogWrite(PIN_SEVO_2, pwm2)
 
-	board.close()
 
-def moure_steppers(steppers_clicats):
+def moure_steppers(steppers_clicats, stepper1_invertit, stepper2_invertit, board):
 
 	# mirar que nomes es cliqui 1 sol boto
 	clicat = 0
@@ -182,20 +171,29 @@ def moure_steppers(steppers_clicats):
 				return
 			clicat = i
 
-	board = Arduino("115200")
 
-	board.pinMode(PIN_STEPPER_1_STEP, "OUTPUT")
-	board.pinMode(PIN_STEPPER_2_STEP, "OUTPUT")
-
-	board.pinMode(PIN_STEPPER_1_DIR, "OUTPUT")
-	board.pinMode(PIN_STEPPER_2_DIR, "OUTPUT")
-
+	# Segur que hi ha una forma molt millor de tractar les direccions dels steppers si estan invertits pero estic massa cansat com pensar en com fer-la
 	if clicat % 2 == 0: # S'ha clicat alguna fletxa superior
-		board.digitalWrite(PIN_STEPPER_1_DIR, 0)
-		board.digitalWrite(PIN_STEPPER_2_DIR, 0)
+		if not stepper1_invertit:
+			board.digitalWrite(PIN_STEPPER_1_DIR, "LOW")
+		else:
+			board.digitalWrite(PIN_STEPPER_1_DIR, "HIGH")
+
+		if not stepper2_invertit:
+			board.digitalWrite(PIN_STEPPER_2_DIR, "LOW")
+		else:
+			board.digitalWrite(PIN_STEPPER_2_DIR, "HIGH")
 	else:
-		board.digitalWrite(PIN_STEPPER_1_DIR, 1)
-		board.digitalWrite(PIN_STEPPER_2_DIR, 1)
+		if stepper1_invertit:
+			board.digitalWrite(PIN_STEPPER_1_DIR, "LOW")
+		else:
+			board.digitalWrite(PIN_STEPPER_1_DIR, "HIGH")
+
+		if stepper2_invertit:
+			board.digitalWrite(PIN_STEPPER_2_DIR, "LOW")
+		else:
+			board.digitalWrite(PIN_STEPPER_2_DIR, "HIGH")
+
 
 	temps_per_step = 0.01
 	iteracions = 1
@@ -210,12 +208,11 @@ def moure_steppers(steppers_clicats):
 		pin_stepper = PIN_STEPPER_2_STEP
 
 	for i in range(iteracions):
-		board.digitalWrite(pin_stepper, 1)
+		board.digitalWrite(pin_stepper, "HIGH")
 		t.sleep(0.01)
-		board.digitalWrite(pin_stepper, 0)
+		board.digitalWrite(pin_stepper, "LOW")
 		t.sleep(0.01)
 
-	board.close()
 
 
 
@@ -375,8 +372,8 @@ def detect_clicks(events):
 	return servos_clicats, steppers_clicats, botons_clicats
 
 
-# per fixar els punts maxim i minim dels servos
-def calibrar():
+# per determinar la direccio i posicio dels steppers i fixar els punts maxim i minim dels servos
+def calibrar(board):
 	calibrant = True
 
 	min_pwm1 = 0
@@ -384,12 +381,11 @@ def calibrar():
 	max_pwm1 = 255
 	max_pwm2 = 255
 
-
 	# invertir
 	servo1_invertit = False
 	servo2_invertit = False
 
-	stepper1_invertit = False
+	stepper1_invertit = False # encara sha d'implementar
 	stepper2_invertit = False
 
 	pwm1 = 128
@@ -466,15 +462,44 @@ def calibrar():
 		clock.tick(20)
 
 		# moure els components
-		#moure_servos(pwm1, pwm2)
-		#moure_steppers(steppers_clicats) sha de fer encara
+		moure_servos(pwm1, pwm2, board)
+		moure_steppers(steppers_clicats, stepper1_invertit, stepper2_invertit, board)
 
 	pygame.quit()
 
 	# preguntar per la altura maxima i minima dels servos en cm (minima ha de ser 0)
 
-
 	return min_pwm1, max_pwm1, min_pwm2, max_pwm2, stepper1_invertit, stepper2_invertit
 
 
-calibrar()
+def iniciar_board():
+	board = Arduino("115200")
+
+	board.pinMode(PIN_SERVO_1, "OUTPUT")
+	board.pinMode(PIN_SERVO_2, "OUTPUT")
+	board.pinMode(PIN_STEPPER_1_STEP, "OUTPUT")
+	board.pinMode(PIN_STEPPER_2_STEP, "OUTPUT")
+	board.pinMode(PIN_STEPPER_1_DIR, "OUTPUT")
+	board.pinMode(PIN_STEPPER_2_DIR, "OUTPUT")
+
+	# important no deixar els valors dels steppers flotant perque llavors es poden moure sols
+	board.digitalWrite(PIN_STEPPER_1_STEP, "LOW")
+	board.digitalWrite(PIN_STEPPER_2_STEP, "LOW")
+
+	board.digitalWrite(PIN_STEPPER_1_DIR, "LOW")
+	board.digitalWrite(PIN_STEPPER_2_DIR, "LOW")
+
+	moure_servos(128, 128, board):
+
+	return board
+
+
+def main():
+	board = iniciar_board()
+
+	calibrar(board)
+
+	board.close()
+
+
+main()
