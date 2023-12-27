@@ -1,7 +1,8 @@
 import math
 import os
+import time as t
 
-from code.funcions_arduino import iniciar_board, arduino_info
+from code.funcions_arduino import iniciar_board, arduino_info, moure_servos, moure_steppers
 from code.calibrar import calibrar
 from code.dibuixar_trajecte import dibuixar_trajecte, guardar_path, llegir_path
 from code.fer_trajecte import fer_trajecte
@@ -21,9 +22,8 @@ while True:
 	print("    3.- Fer trajecte")
 	print("    4.- Sortir")
 
+
 	entrada = int(input())
-
-
 
 	if entrada == 1:
 		min_pwm1, max_pwm1, min_pwm2, max_pwm2, stepper1_invertit, stepper2_invertit, max_y_height = calibrar(a)
