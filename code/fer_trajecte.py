@@ -3,21 +3,6 @@ import time as t
 from Arduino import Arduino
 from code.funcions_arduino import arduino_info
 
-# POSICIO DEL ORIGEN: el punt (0, 0) esta amb la x al cap de la maquina i la y en la posicio mes baixa
-
-# Posicio minima i maxima dels servos
-SERVO_Y_MIN = 0
-SERVO_Y_MAX = 5
-
-# Pins a utilitzar, mirar que els pins dels servos tinguin implementada la funcionalitat pwm
-PIN_SERVO_1 = 9
-PIN_SERVO_2 = 10
-
-PIN_STEPPER_1_STEP = 7
-PIN_STEPPER_2_STEP = 8
-
-PIN_STEPPER_1_DIR = 5
-PIN_STEPPER_2_DIR = 6
 
 
 # retorna el valor_obj proporcional al valor_ref, fa el mateix que la funcio "map" en la arduino
@@ -45,8 +30,8 @@ def anar_a_punt(x_ini, y_ini, x_fi, y_fi, vel, servo_info, stepper1_invertit, st
 	if x_fi < x_ini: # si s'ha de girar la direccio
 		direccio = 0
 
-	temps_per_step = ( math.sqrt(pow(x_ini-x_fi, 2) + pow(y_ini-y_fi, 2)) / vel)/num_steps
-
+	#temps_per_step = ( math.sqrt(pow(x_ini-x_fi, 2) + pow(y_ini-y_fi, 2)) / vel)/num_steps
+	temps_per_step=0
 	
 	pwm1_ini = valor_proporcional(y_ini, servo_y_min, servo_y_max, servo1_pwm_min, servo1_pwm_max) # calcular la pwm que en teoria te el servo en la posicio y_ini
 	pwm1_fi = valor_proporcional(y_fi, servo_y_min, servo_y_max, servo1_pwm_min, servo1_pwm_max)
@@ -109,8 +94,6 @@ def anar_a_punt(x_ini, y_ini, x_fi, y_fi, vel, servo_info, stepper1_invertit, st
 		# esperar temps/2
 		t.sleep(temps_per_step/2)
 
-	a.board.close()
-
 	return x_fi, y_fi
 
 # mira que ningun segment del trajecte sigui massa vertical
@@ -151,9 +134,10 @@ def fer_trajecte(llista_punts, velocitat, servo_info, stepper1_invertit, stepper
 	x, y = (0, 0)
 
 	for p in llista_punts:
-		x, y = anar_a_punt(x, y, llista_punts[0], llista_punts[1], velocitat, servo_info, stepper1_invertit, stepper2_invertit, a)
+		x, y = anar_a_punt(x, y, p[0], p[1], velocitat, servo_info, stepper1_invertit, stepper2_invertit, a)
 		if x == -1 or y == -1:
 			return x, y
+		print("punt fet")
 
 	return x, y # retorna la posicio final on esta la cnc
 

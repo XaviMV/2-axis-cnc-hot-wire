@@ -126,8 +126,8 @@ def calibrar(a):
 		clock.tick(20)
 
 		# moure els components
-		#moure_servos(pwm1, pwm2, a)
-		#moure_steppers(steppers_clicats, stepper1_invertit, stepper2_invertit, a)
+		moure_servos(pwm1, pwm2, a)
+		moure_steppers(steppers_clicats, stepper1_invertit, stepper2_invertit, a)
 
 	pygame.quit()
 

@@ -7,14 +7,8 @@ class arduino_info:
 	def __init__(self):
 		# Pins a utilitzar, mirar que els pins dels servos tinguin implementada la funcionalitat pwm
 		self.llegir_pins()
-
-		try:
-			self.board = self.crear_board()
-		except:
-			self.board = 1
-
-	def crear_board(self):
 		self.board = iniciar_board(self)
+
 
 	def llegir_pins(self):
 		with open("data/arduino_pins.txt", 'r') as file:
@@ -40,13 +34,15 @@ def moure_servos(pwm1, pwm2, a):
 def moure_steppers(steppers_clicats, stepper1_invertit, stepper2_invertit, a):
 
 	# mirar que nomes es cliqui 1 sol boto
-	clicat = 0
+	clicat = -1
 	for i in range(len(steppers_clicats)):
 		if steppers_clicats[i] == 1:
-			if clicat != 0: # si es troba un segon boto clicat es para la funcio
+			if clicat != -1: # si es troba un segon boto clicat es para la funcio
 				return
 			clicat = i
 
+	if clicat == -1:
+		return
 
 	# Segur que hi ha una forma molt millor de tractar les direccions dels steppers si estan invertits pero estic massa cansat com per pensar en com fer-la
 
@@ -100,13 +96,14 @@ def iniciar_board(a):
 	board.pinMode(a.PIN_STEPPER_1_DIR, "OUTPUT")
 	board.pinMode(a.PIN_STEPPER_2_DIR, "OUTPUT")
 
+	board.analogWrite(a.PIN_SERVO_1, 128)
+	board.analogWrite(a.PIN_SERVO_2, 128)
+
 	# important no deixar els valors dels steppers flotant perque llavors es poden moure sols
 	board.digitalWrite(a.PIN_STEPPER_1_STEP, "LOW")
 	board.digitalWrite(a.PIN_STEPPER_2_STEP, "LOW")
 
 	board.digitalWrite(a.PIN_STEPPER_1_DIR, "LOW")
 	board.digitalWrite(a.PIN_STEPPER_2_DIR, "LOW")
-
-	moure_servos(128, 128, board)
 
 	return board
