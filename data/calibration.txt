@@ -1,0 +1,15 @@
+100
+110
+120
+130
+0
+0
+5
+Nomes es llegeixen les 7 primeres linies del document, representen les seguents variables:
+min_pwm1
+max_pwm1
+min_pwm2
+max_pwm2
+stepper1_invertit
+stepper2_invertit
+max_y_height
