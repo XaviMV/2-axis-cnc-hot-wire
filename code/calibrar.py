@@ -8,19 +8,18 @@ from code.funcions_arduino import moure_servos, moure_steppers, arduino_info
 def calibrar(a):
 	calibrant = True
 
-	min_pwm1 = 0
-	min_pwm2 = 0
-	max_pwm1 = 255
-	max_pwm2 = 255
-
-	max_y_height = 1 # altura dels servos en la seva posicio mes alta, tenint en compte que la seva posicio mes baixa pepresenta Y = 0
+	min_pwm1, max_pwm1, min_pwm2, max_pwm2, stepper1_invertit, stepper2_invertit, max_y_height = llegir_calibracio()
 
 	# invertir
-	servo1_invertit = False
-	servo2_invertit = False
+	if max_pwm1 > min_pwm1:
+		servo1_invertit = False
+	else:
+		servo1_invertit = True
 
-	stepper1_invertit = 0
-	stepper2_invertit = 0
+	if max_pwm2 > min_pwm2:
+		servo2_invertit = False
+	else:
+		servo2_invertit = True
 
 	pwm1 = 128
 	pwm2 = 128
@@ -30,7 +29,6 @@ def calibrar(a):
 	pygame.display.set_caption('Calibration')
 	clock = pygame.time.Clock()
 
-	min_pwm1, max_pwm1, min_pwm2, max_pwm2, stepper1_invertit, stepper2_invertit, max_y_height = llegir_calibracio()
 
 	while calibrant: # objectiu de la clalibracio es veure quins son els valors pwm maxims i minims de cada servo
 
