@@ -4,7 +4,7 @@
 130
 0
 0
-5
+4
 Nomes es llegeixen les 7 primeres linies del document, representen les seguents variables:
 min_pwm1
 max_pwm1

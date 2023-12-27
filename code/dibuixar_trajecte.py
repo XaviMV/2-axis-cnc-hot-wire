@@ -286,7 +286,7 @@ def guardar_path(nom, punts):
 	for p in punts:
 		data.append(str(p[0]) + " " + str(p[1]))
 
-	with open("data/created_paths/"+nom+".txt", 'w') as file:
+	with open("data/created_paths/"+nom, 'w') as file:
 		for linia in data:
 			if not "\n" in linia:
 				linia += "\n"
@@ -296,8 +296,8 @@ def llegir_path(nom):
 
 	llista_punts = []
 
-	if os.path.exists("data/created_paths/"+nom+".txt"):
-		with open("data/created_paths/"+nom+".txt", 'r') as file:
+	if os.path.exists("data/created_paths/"+nom):
+		with open("data/created_paths/"+nom, 'r') as file:
 			linies = file.readlines()
 			for l in linies:
 				x, y = l.split(" ")

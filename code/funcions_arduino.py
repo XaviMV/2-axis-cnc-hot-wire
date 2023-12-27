@@ -7,8 +7,10 @@ class arduino_info:
 	def __init__(self):
 		# Pins a utilitzar, mirar que els pins dels servos tinguin implementada la funcionalitat pwm
 		self.llegir_pins()
-		self.board = iniciar_board(self)
-
+		try:
+			self.board = iniciar_board(self)
+		except:
+			self.board = 1
 
 	def llegir_pins(self):
 		with open("data/arduino_pins.txt", 'r') as file:
