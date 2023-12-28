@@ -11,67 +11,90 @@ from code.fer_trajecte import fer_trajecte
 
 # POSICIO DEL ORIGEN: el punt (0, 0) esta amb la x al cap de la maquina i la y en la posicio mes baixa
 
-def show_success(info):
-	CTkMessagebox(title="Success", message=info, icon="check", corner_radius=0)
+def show_success(info, m):
+	msg = CTkMessagebox(master=m, title="Success", message=info, icon="check", corner_radius=0)
+	msg.get()
 
-def show_error(info):
-	CTkMessagebox(title="Error", message=info, icon="cancel", corner_radius=0)
+def show_error(info, m):
+	msg = CTkMessagebox(master=m, title="Error", message=info, icon="cancel", corner_radius=0)
+	msg.get()
 
 class App(ctk.CTk):
-	def __init__(self, *args, **kwargs):
-		super().__init__(*args, **kwargs)
+	def __init__(self):
+		super().__init__()
 
 		self.a = arduino_info()
 
-		self.geometry("600x400")
+		self.title("CNC")
+
+		w = 650 # width for the app
+		h = 225 # height for the app
+		ws = self.winfo_screenwidth() # width of the screen
+		hs = self.winfo_screenheight() # height of the screen
+		x = (ws/2) - (w/2)
+		y = (hs/2) - (h/2)
+		self.geometry('%dx%d+%d+%d' % (w, h, x, y))
+
+		self.frame = ctk.CTkFrame(self)
+		self.frame.grid(row=0, column=2, padx=20, pady=20)
 
 		self.button_calibrate = ctk.CTkButton(self, text="Calibrate", command=self.calibrate)
-		self.button_calibrate.grid(row=0, column=0, padx=20, pady=20)
+		self.button_calibrate.grid(row=0, column=0, padx=20, pady=20, rowspan=2)
 
 		self.button_draw_path = ctk.CTkButton(self, text="Draw path", command=self.draw_path)
-		self.button_draw_path.grid(row=0, column=1, padx=20, pady=20)
+		self.button_draw_path.grid(row=0, column=1, padx=20, pady=20, rowspan=2)
 
-		self.button_execute_path = ctk.CTkButton(self, text="Execute path", command=self.execute_path)
-		self.button_execute_path.grid(row=0, column=2, padx=20, pady=20)
+		self.button_execute_path = ctk.CTkButton(self.frame, text="Execute path", command=self.execute_path)
+		self.button_execute_path.grid(row=0, column=0, padx=20, pady=20)
 
 		self.path_options = os.listdir(os.path.join(os.getcwd(), "data", "created_paths"))
-		self.path_file_choice = ctk.CTkComboBox(self, values=self.path_options, command=self.update_combobox)
-		self.path_file_choice.grid(row=1, column=2, padx=20, pady=20)
+		self.path_file_choice = ctk.CTkComboBox(self.frame, values=self.path_options, command=self.update_combobox)
+		self.path_file_choice.grid(row=1, column=0, padx=20, pady=20)
 		self.path_file_choice.set("")
 
-		self.toplevel_window = None
-
-	def open_toplevel(self):
-		if self.toplevel_window is None or not self.toplevel_window.winfo_exists():
-			self.toplevel_window = ErrorWindow(self)  # create window if its None or destroyed
-		else:
-			self.toplevel_window.focus()  # if window exists focus it
 
 	def calibrate(self):
 		calibrar(self.a)
-		show_success("Calibration settings have been updated")
+		show_success("Calibration settings have been updated", self)
 
 	def draw_path(self):
-		dialog = ctk.CTkInputDialog(text="Name of the path to be created:", title="Path naming")
-		entrada = dialog.get_input()
 
-		# teure tots els espais a l'esquerra del primer caracter i a la dreta de l'ultim
-		entrada = entrada.strip()
+		_, _, _, _, _, _, max_y_height = llegir_calibracio()
 
-		if entrada != None and entrada != "" and not (entrada in os.listdir(os.path.join(os.getcwd(), "data", "created_paths"))):
+		punts = dibuixar_trajecte(max_y_height)
 
-			_, _, _, _, _, _, max_y_height = llegir_calibracio()
+		if len(punts) <= 1:
+			show_error("The path cannot be created since it is empty", self)
+			return
 
-			punts = dibuixar_trajecte(max_y_height)
+		while True:
+			dialog = ctk.CTkInputDialog(text="Name of the path to be created:", title="Path naming")
 
-			guardar_path(entrada, punts)
+			# fer que apareixe a sobre de la app
+			w = 350
+			h = 200
+			x, y = self.winfo_x(), self.winfo_y()
+			dialog.geometry('%dx%d+%d+%d' % (w, h, x+30, y+30))
 
-			show_success("The path has been saved!")
+			entrada = dialog.get_input()
 
-		elif entrada != None and entrada != "":
-			show_error("The file name is already in use")
-		elif entrada != None:
-			show_error("The file name cannot be empty")
+			if entrada == None: # si se li ha donat a cancel
+				show_success("The path has not been saved", self)
+				return
+
+			# teure tots els espais a l'esquerra del primer caracter i a la dreta de l'ultim
+			entrada = entrada.strip()
+
+			if entrada != None and entrada != "" and not (entrada in os.listdir(os.path.join(os.getcwd(), "data", "created_paths"))):
+				guardar_path(entrada, punts)
+				show_success("The path has been saved!", self)
+				return
+
+			elif entrada != None and entrada != "":
+				show_error("That file name is already in use", self)
+			elif entrada != None:
+				show_error("The file name cannot be empty", self)
+
 
 	def execute_path(self):
 		
@@ -81,6 +104,10 @@ class App(ctk.CTk):
 
 		nom_arxiu = self.path_file_choice.get()
 
+		if nom_arxiu == "":
+			show_error("You first need to choose a file from the selector below", self)
+			return
+
 		trobat = False
 
 		for arx in os.listdir(os.path.join(os.getcwd(), "data", "created_paths")):
@@ -88,7 +115,7 @@ class App(ctk.CTk):
 				trobat = True
 
 		if not trobat:
-			show_error("The file couldn't be found")
+			show_error("The file couldn't be found", self)
 			return
 
 		punts = llegir_path(nom_arxiu)
@@ -101,4 +128,12 @@ class App(ctk.CTk):
 
 
 app = App()
+
+for c in range(3):
+	app.grid_columnconfigure(c, weight=1)
+for r in range(1):
+	app.grid_rowconfigure(r, weight=1)
+
+app.minsize(width=580, height=180)
+app.maxsize(width=1920, height=1080)
 app.mainloop()
