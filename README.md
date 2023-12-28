@@ -44,6 +44,10 @@ pip packages:
 
 > numpy
 
-## 3D Printing
+> customtkinter
 
-Information about the 3D files and prints is inside the folder "3D prints"
+> CTkMessagebox
+
+## 3D Prints and Hardware
+
+Information about the 3D files, prints and hardware used in the building of the CNC is inside the folder "3D prints".
