@@ -88,6 +88,7 @@ class App(ctk.CTk):
 			if entrada != None and entrada != "" and not (entrada in os.listdir(os.path.join(os.getcwd(), "data", "created_paths"))):
 				guardar_path(entrada, punts)
 				show_success("The path has been saved!", self)
+				self.command_update_combobox()
 				return
 
 			elif entrada != None and entrada != "":
@@ -122,9 +123,12 @@ class App(ctk.CTk):
 
 		x, y = fer_trajecte(punts, 1, servo_info, stepper1_invertit, stepper2_invertit, self.a)
 
-	def update_combobox(self, box_value):
+	def command_update_combobox(self):
 		self.path_options = os.listdir(os.path.join(os.getcwd(), "data", "created_paths"))
 		self.path_file_choice.configure(values=self.path_options)
+
+	def update_combobox(self, box_value):
+		self.command_update_combobox()
 
 
 app = App()

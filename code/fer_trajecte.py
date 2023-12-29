@@ -26,7 +26,7 @@ def anar_a_punt(x_ini, y_ini, x_fi, y_fi, vel, servo_info, stepper1_invertit, st
 
 	direccio = 1
 
-	num_steps = abs(x_fi-x_ini)*(8000/14)
+	num_steps = abs(x_fi-x_ini)*(16000/14)
 	if x_fi < x_ini: # si s'ha de girar la direccio
 		direccio = 0
 
@@ -137,7 +137,7 @@ def fer_trajecte(llista_punts, velocitat, servo_info, stepper1_invertit, stepper
 		x, y = anar_a_punt(x, y, p[0], p[1], velocitat, servo_info, stepper1_invertit, stepper2_invertit, a)
 		if x == -1 or y == -1:
 			return x, y
-		print("punt fet")
+		print(x, y)
 
 	return x, y # retorna la posicio final on esta la cnc
 
