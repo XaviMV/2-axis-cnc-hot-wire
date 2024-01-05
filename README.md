@@ -6,7 +6,7 @@ This project combines 3D printing, Arduino, and Python to create a 2-axis CNC ho
 
 An Arduino board must always be connected to the computer and flashed with the code inside the "code_for_arduino" folder. The communication from the computer to the Arduino is taken from https://github.com/mkals/Arduino-Python3-Command-API.
 
-After executing main.py a terminal will open with 3 different options aside from the exit function.
+After executing main.py, a window with a GUI will open with 3 different options.
 
 * __Calibration:__
 
